@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.rk.osgi.karaf</groupId>
+	<artifactId>com.rk.osgi.karaf.declarativeservice</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>bundle</packaging>
+
+	<name>com.rk.osgi.karaf.declarativeservice Bundle</name>
+	<description>
+        com.rk.osgi.karaf.declarativeservice OSGi bundle project.
+    </description>
+
+	<properties>
+		<maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
+		<osgi.version>6.0.0</osgi.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>${osgi.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Quote dependency -->
+		<dependency>
+			<groupId>com.rk.osgi.karaf</groupId>
+			<artifactId>com.rk.osgi.karaf.quote</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
+		<!-- SCR- Service component annotation dependency -->
+		<dependency>
+			<groupId>biz.aQute</groupId>
+			<artifactId>bndlib</artifactId>
+			<version>2.0.0.20130123-133441</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>${maven-bundle-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						<Service-Component>*</Service-Component>
+						<Export-Package>
+							com.rk.osgi.karaf.declarativeservice*;version=${project.version}
+						</Export-Package>
+						<Import-Package>com.rk.osgi.karaf.quote,*</Import-Package>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
