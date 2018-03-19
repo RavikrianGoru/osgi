@@ -1,0 +1,1095 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2018-03-16T15:16:56+05:30
+
+**Notes-Zim editor**
+
+====== OSGi External Training Lab ======
+Created Friday 16 March 2018
+
+**1) First bundle as exlipse plug-in project**
+Ref: **com.rk.osgi.firstbundle bundle **
+Select build.properties
+Select Dependencies: **system.bundle**
+Right click on manifest.mf file--> run as -->run configurations--> Bundles
+The following should be selected:
+	com.rk.osgi.firstbundle
+	org.apache.felix.gogo.command
+	org.apache.felix.gogo.runtime
+	org.apache.felix.gogo.shell
+	org.eclipse.equinox.console
+**2) Karaf installation, deploy a bundle**	
+Download and extract apache karaf.
+Run karaf.bat file 
+
+**Installing features:**
+feature:repo-add camel 2.18.4
+feature:install camel-spring
+feature:install camel-blueprint
+[[system:framework]]
+feature:install webconsole								[[feature:uninstall]] webconsole
+http://localhost:8181/system/console/bundles
+karaf/karaf
+Normally Karaf remembers the features and bundles you installed and started.
+**To reset Karaf into a clean state, just delete the data directory when Karaf is not running.**
+
+
+**i) Eclipse osgi server: <Not working in my env>**
+**Export earlier created  bundle: com.rk.osgi.firstbundle : **This will allow us to install it into a OSGi runtime.
+select bundle->file->Export->Plug-in Development->"Deployable plug-in and fragment"
+Next
+Destination-->browse the location for Directory: C:\Users\zgorrav\rk_github\
+Options      -->Select only Package plug-ins as individual JAR archives
+			 Creates Jar in C:\Users\zgorrav\rk_github\plugins\com.rk.osgi.firstbundle_1.0.0.201803161813.jar
+To run OSGi standalone server:
+	Copy org.eclipse.osgi.jar from Eclipse installed directory/plugins to  C:\Users\zgorrav\rk_github\plugins\ place.
+	one cmd prompt and go to above location
+	 >**java -jar org.eclipse.osgi.jar -console**
+	> install file:C:\Users\zgorrav\rk_github\plugins\com.rk.osgi.firstbundle_1.0.0.201803161813.jar
+	>start:
+	>ss
+**ii) Felix server** **<Not working in my env> **
+**Download apache felix destribution and extract**
+ Open console at [[/c/tools/felix-framework-5.6.10/bin]]
+ > java -jar felix.jar
+ g! [[felix:install]] file:distFolder/com.rk.osgi.firstbundle_1.0.0.201803161813.jar
+ g! [[felix:start]] <bID>
+
+**iii) karaf server <Working> **☺
+Download ans extract apache karaf->Double click on bin/karaf.bat
+ **karaf@root>> bundle:install -s **file:///C:/Users/zgorrav/rk_github/plugins/com.rk.osgi.firstbundle_1.0.0.201803161813.jar
+ **karaf@root>> bundle:stop <bid>**
+ **karaf@root>> bundle:start <bid>**
+**karaf@root>> bundle:stop <bid>**
+
+We can connect karaf in server mode: without console
+**bin> karaf server**
+
+We can connect karaf from remote machine
+karaf@localhost:8101
+
+**iv) bnd tool**
+open eclipse->help->market place->find:bnd->install->confirm->install
+
+**v) OSGi bundle using maven -Felix**
+Open eclipse-->help-->install new s/w-->work with: oxygen.....
+  
+General Purpose Tools	
+		m2e - Maven Integration for Eclipse (includes Incubating components)	1.8.2.20171007-0217
+		m2e - slf4j over logback logging (Optional)	1.8.2.20171007-0217
+   Web, XML, Java EE and OSGi Enterprise Development	
+		m2e-wtp - Maven Integration for WTP	1.3.3.20170823-1905
+		m2e connector  for mavenarcheive pom properties
+
+**2a) Creating bundle to run in felix** 
+Ref: **com.rk.osgi.secondbundle**
+
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation->**org.apache.maven.archetypes(maven-archetype-quickstart)->**
+		com.rk.osgi
+		com.rk.osgi.secondbundle
+		Finish
+pom.xml updates:
+
+== ===== ==
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.rk.osgi.felix</groupId>
+	<artifactId>com.rk.osgi.felix.secondbundle</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>bundle</packaging>
+
+	<name>com.rk.osgi.felix.secondbundle</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<equinox.version>3.5.1.R35x_v20090827</equinox.version>
+		<maven-bundle-plugin.version>2.1.0</maven-bundle-plugin.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.osgi</groupId>
+			<artifactId>org.eclipse.osgi</artifactId>
+			<version>${equinox.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.felix</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<!-- (2) START It Help To generate the Manifest file and the Bundle Jar -->
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>${maven-bundle-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						<Bundle-Activator>com.rk.osgi.felix.secondbundle.MyBundleActivator</Bundle-Activator>
+						<Export-Package>
+							com.rk.osgi.felix.secondbundle*;version=${project.version}
+						</Export-Package>
+						<Required-Bundle></Required-Bundle>
+						<Import-Package>
+							org.osgi.framework,
+							*;resolution:=optional
+						</Import-Package>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<repositories>
+		<repository>
+			<id>com.springsource.repository.bundles.release</id>
+			<name>SpringSource EBR - SpringSource Bundle Releases</name>
+			<url>http://repository.springsource.com/maven/bundles/release</url>
+		</repository>
+		<repository>
+			<id>com.springsource.repository.bundles.external</id>
+			<name>SpringSource EBR - External Bundle Releases</name>
+			<url>http://repository.springsource.com/maven/bundles/external</url>
+		</repository>
+		<repository>
+			<id>spring-maven-milestone</id>
+			<name>Springframework Maven Repository</name>
+			<url>http://s3.amazonaws.com/maven.springframework.org/milestone</url>
+		</repository>
+		<repository>
+			<id>spring-osgified-artifacts</id>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<name>Springframework Maven OSGified Artifacts Repository</name>
+			<url>http://maven.springframework.org/osgi</url>
+		</repository>
+	</repositories>
+
+</project>
+
+**2b) Create bundle to run in karaf<Working>**
+Ref: **com.rk.osgi.karaf.secondbundle**
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation->**org.apache.maven.archetypes(maven-archetype-quickstart)->**
+->Add archetype
+	org.apache.karaf.archetypes
+	karaf-bundle-archetype
+	4.0.0
+Select:org.apache.karaf.archetypes(	karaf-bundle-archetype) 4.0.0
+->Next
+
+New MavenProject:
+	com.rk.osgi.karaf
+	com.rk.osgi.karaf.secondbundle
+	0.0.1-SNAPSHOT
+	com.rk.osgi.karaf.secondbundle
+	Name: package
+	[[Value:com.rk.osgi.karaf.secondbundle]]
+	Finish
+Run >mvn clean install
+Deploy the jar in deploy folder
+
+
+
+**3) Create bundles - quote,quoteservice and quoteconsumer**
+
+**3a)Create Quote bundle:**
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation-> do not select any template
+Select:org.apache.karaf.archetypes(	karaf-bundle-archetype) 4.0.0
+->Next
+New MavenProject:
+	com.rk.osgi.karaf
+	com.rk.osgi.karaf.quote
+	0.0.1-SNAPSHOT
+	Name: package
+	[[Value:com.rk.osgi.karaf.quote]]
+	Finish
+Finish
+
+Delete Activator as it is not needed.
+**pom.xml file will ba sa follow**
+------------------------------- 
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.rk.osgi.karaf</groupId>
+	<artifactId>com.rk.osgi.karaf.quote</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>bundle</packaging>
+
+	<name>com.rk.osgi.karaf.quote Bundle</name>
+	<description>
+		com.rk.osgi.karaf.quote OSGi bundle project.
+	</description>
+
+	<properties>
+		<maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
+		<osgi.version>6.0.0</osgi.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>${osgi.version}</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>${maven-bundle-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						**<Export-Package>**
+**                            com.rk.osgi.karaf.quote;version=${project.version}**
+**                        </Export-Package>**
+						<Import-Package>
+							*
+						</Import-Package>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
+
+**Create IQuoteService interface as follow**
+package com.rk.osgi.karaf.quote;
+public interface IQuoteService
+{
+	String getQuote();
+}
+
+**3b)Create Quote Service bundle:**
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation-> do not select any template
+Select:org.apache.karaf.archetypes(	karaf-bundle-archetype) 4.0.0
+->Next
+New MavenProject:
+	com.rk.osgi.karaf
+	com.rk.osgi.karaf.quoteservice
+	0.0.1-SNAPSHOT
+	Name: package
+	[[Value:com.rk.osgi.karaf.quoteservice]]
+Finish
+**Update th pom.xml file as follow**
+--------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.rk.osgi.karaf</groupId>
+	<artifactId>com.rk.osgi.karaf.quoteservice</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>bundle</packaging>
+
+	<name>com.rk.osgi.karaf.quoteservice Bundle</name>
+	<description>
+		com.rk.osgi.karaf.quoteservice OSGi bundle project.
+	</description>
+
+	<properties>
+		<maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
+		<osgi.version>6.0.0</osgi.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>${osgi.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		**<dependency>**
+**            <groupId>com.rk.osgi.karaf</groupId>**
+**            <artifactId>com.rk.osgi.karaf.quote</artifactId>**
+**            <version>0.0.1-SNAPSHOT</version>**
+**        </dependency>**
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>${maven-bundle-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						**<Bundle-Activator>com.rk.osgi.karaf.quoteservice.Activator</Bundle-Activator>**
+						<Export-Package>
+							com.rk.osgi.karaf.quoteservice*;version=${project.version}
+						</Export-Package>
+						**<Require-Bundle>com.rk.osgi.karaf.quote</Require-Bundle>**
+						<Import-Package>
+							*
+						</Import-Package>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
+
+**Create QuioteService.java and update Activator as follow**
+--------------------
+package com.rk.osgi.karaf.quoteservice.internal;
+import java.util.Random;
+import com.rk.osgi.karaf.quote.IQuoteService;
+public class QuoteService implements IQuoteService
+{
+	public String getQuote()
+	{
+		Random random = new Random(3);
+		int num = random.nextInt();
+		System.out.println("Generated num:"+num);
+		switch (num)
+		{
+			case 0:
+				return "service quote -0";
+			case 1:
+				return "service quote -1";
+			case 2:
+				return "service quote -2";
+			case 3:
+				return "service quote -3";
+			default:
+				return "service quote -default -100";
+		}
+	}
+}
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.rk.osgi.karaf.quoteservice;
+
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import com.rk.osgi.karaf.quote.IQuoteService;
+import com.rk.osgi.karaf.quoteservice.internal.QuoteService;
+public class Activator implements BundleActivator {
+
+	public void start(BundleContext context) {
+		IQuoteService quoteService=new QuoteService();
+		System.out.println("QuotaService activate's start()-called");
+		System.out.println("About to register IQuoteService");
+		context.registerService(IQuoteService.class.getName(), quoteService, null);
+		System.out.println("IQuoteService is Registered");
+	}
+
+	public void stop(BundleContext context) {
+		System.out.println("QuotaService activate's stop()-called");
+		context.registerService(IQuoteService.class.getName(), null, null);
+		System.out.println("IQuoteService is Deregistered");
+	}
+}
+
+**3b)Create Quote Consumer bundle:**
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation-> do not select any template
+Select:org.apache.karaf.archetypes(	karaf-bundle-archetype) 4.0.0
+->Next
+New MavenProject:
+	com.rk.osgi.karaf
+	com.rk.osgi.karaf.quoteconsumer
+	0.0.1-SNAPSHOT
+	Name: package
+	[[Value:com.rk.osgi.karaf.quoteconsumer]]
+Finish
+
+**Update pom.xml as follw**
+---------------------------- 
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.rk.osgi.karaf</groupId>
+	<artifactId>com.rk.osgi.karaf.quoteconsumer</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>bundle</packaging>
+
+	<name>com.rk.osgi.karaf.quoteconsumer Bundle</name>
+	<description>
+		com.rk.osgi.karaf.quoteconsumer OSGi bundle project.
+	</description>
+
+	<properties>
+		<maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
+		<osgi.version>6.0.0</osgi.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>${osgi.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		**<dependency>**
+**            <groupId>com.rk.osgi.karaf</groupId>**
+**            <artifactId>com.rk.osgi.karaf.quote</artifactId>**
+**            <version>0.0.1-SNAPSHOT</version>**
+**        </dependency>**
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>${maven-bundle-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						<Bundle-Activator>com.rk.osgi.karaf.quoteconsumer.Activator</Bundle-Activator>
+						<Export-Package>
+							com.rk.osgi.karaf.quoteconsumer*;version=${project.version}
+						</Export-Package>
+						**<Import-Package>**
+**                           com.rk.osgi.karaf.quote,***
+**                        </Import-Package>**
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
+
+**Update activator.java**
+--------------------- 
+package com.rk.osgi.karaf.quoteconsumer;
+
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+
+import com.rk.osgi.karaf.quote.IQuoteService;
+
+public class Activator implements BundleActivator {
+	private BundleContext context;
+	private IQuoteService service;
+    
+	public void start(BundleContext context) {
+		this.context=context;
+        
+		ServiceReference serviceRef=context.getServiceReference(IQuoteService.class.getName());
+		service=(IQuoteService)context.getService(serviceRef);
+		System.out.println("IQuoteService is retrieved from context: "+service.getQuote());
+		System.out.println("Starting the bundle");
+	}
+
+	public void stop(BundleContext context) {
+		System.out.println("Stopping the bundle: "+service.getQuote());
+	}
+
+}
+
+**Build 3a), 3b) and 3c) bundles and install bundle in karaf container**
+
+
+**4) Import / Required/ Version bundles - Karaf**
+
+We use quote, quoteservice, quoteconsumer bundle here.
+>bundle:list
+>package:exports |grep <bid>
+
+**karaf@root()> list**
+START LEVEL 100 , List Threshold: 50
+ID | State  | Lvl | Version        | Name
+---+--------+-----+----------------+------------------------------------------------------------------------------------------
+28 | Active |  80 | 4.1.1          | Apache Karaf :: OSGi Services :: Event
+52 | Active |  80 | 0.0.1.SNAPSHOT | com.rk.osgi.karaf.quote Bundle
+53 | Active |  80 | 0.0.1.SNAPSHOT | com.rk.osgi.karaf.quoteservice Bundle
+54 | Active |  80 | 0.0.1.SNAPSHOT | com.rk.osgi.karaf.secondbundle Bundle
+55 | Active |  80 | 0.0.1.SNAPSHOT | com.rk.osgi.karaf.quoteconsumer Bundle
+56 | Active |  80 | 1.0.0.SNAPSHOT | Apache Karaf :: Shell custom Commands
+**karaf@root()> package:exports |grep 52**
+com.rk.osgi.karaf.quote                                             | 0.0.1.SNAPSHOT | 52 | com.rk.osgi.karaf.quote
+**karaf@root()> package:exports |grep 53**
+com.rk.osgi.karaf.quoteservice.internal                             | 0.0.1.SNAPSHOT | 53 | com.rk.osgi.karaf.quoteservice
+com.rk.osgi.karaf.quoteservice                                      | 0.0.1.SNAPSHOT | 53 | com.rk.osgi.karaf.quoteservice
+**karaf@root()> package:exports |grep 55**
+com.rk.osgi.karaf.quoteconsumer                                     | 0.0.1.SNAPSHOT | 55 | com.rk.osgi.karaf.quoteconsumer
+
+Let us change the version of Quote Bundle as follows in pom.xml
+<Export-Package>
+com.hp.osgi.quote;version=1.0.0
+</Export-Package>
+**Build quote budle, uninstall quote bundle 1.0.0-SNAPSHOT, deploy quote bundle 1.0.0.**
+Refresh quoteconsumer. It will not start as dependency version violation
+
+How to solve this issue:
+**update quoteconsumer bundle's pom.xml file**
+-------------------------------------------------- 
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.rk.osgi.karaf</groupId>
+	<artifactId>com.rk.osgi.karaf.quoteconsumer</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>bundle</packaging>
+
+	<name>com.rk.osgi.karaf.quoteconsumer Bundle</name>
+	<description>
+		com.rk.osgi.karaf.quoteconsumer OSGi bundle project.
+	</description>
+
+	<properties>
+		<maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
+		<osgi.version>6.0.0</osgi.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>${osgi.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.rk.osgi.karaf</groupId>
+			<artifactId>com.rk.osgi.karaf.quote</artifactId>
+			**<version>1.0.0</version>**
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>${maven-bundle-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						<Bundle-Activator>com.rk.osgi.karaf.quoteconsumer.Activator</Bundle-Activator>
+						<Export-Package>
+							com.rk.osgi.karaf.quoteconsumer*;version=${project.version}
+						</Export-Package>
+						<Import-Package>
+						   **com.rk.osgi.karaf.quote,version:"[1.0.0,1.2.0)",***
+						</Import-Package>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
+**Redeploy the bundle.**
+
+**5) Declarative OSGi service -Karaf Archetype: **
+
+**5a) Define a declarative OSGi Service: **We are going to create declarative service based on quote bundle.
+
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation-> do not select any template
+Select:org.apache.karaf.archetypes(	karaf-bundle-archetype) 4.0.0
+->Next
+New MavenProject:
+	com.rk.osgi.karaf
+	com.rk.osgi.karaf.declarativeservice
+	0.0.1-SNAPSHOT
+	Name: package
+	[[Value:com.rk.osgi.karaf.declarativeservice]]
+Finish
+**Remove Activator as it is not required.**
+Open pom.xml file.
+	add quote bundle dependency, and add as <Inport-Package>
+	**<dependency>**
+	**            <groupId>com.rk.osgi.karaf</groupId>**
+	**            <artifactId>com.rk.osgi.karaf.quote</artifactId>**
+	**            <version>1.0.0</version>**
+	**</dependency>**
+	
+	**<Service-Component>*</Service-Component>**
+	**<Import-Package>com.rk.osgi.karaf.quote,*</Import-Package>**
+
+Add service component annotation dependency too
+	**<dependency>**
+		**<groupId>biz.aQute</groupId>**
+		**<artifactId>bndlib</artifactId>**
+		**<version>2.0.0.20130123-133441</version>**
+	**</dependency>**
+
+Create [[QuoteService]] class as follow
+---------------------------------- 
+package com.rk.osgi.karaf.declarativeservice;
+
+import java.util.Random;
+import com.rk.osgi.karaf.quote.IQuoteService;
+**import aQute.bnd.annotation.component.Component;**
+
+**@Component**
+public class QuoteService implements IQuoteService
+{
+	public String getQuote()
+	{
+		Random random = new Random();
+		int num = random.nextInt(3);
+		System.out.println("Generated num:"+num);
+		switch (num)
+		{
+			case 0:
+				return "service quote -0";
+			case 1:
+				return "service quote -1";
+			case 2:
+				return "service quote -2";
+			case 3:
+				return "service quote -3";
+			default:
+				return "service quote -default -100";
+		}
+	}
+}
+**5b) Create component definition : which will the consumer.**
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation-> do not select any template
+Select:org.apache.karaf.archetypes(	karaf-bundle-archetype) 4.0.0
+->Next
+New MavenProject:
+	com.rk.osgi.karaf
+	com.rk.osgi.karaf.declarativeconsumer
+	0.0.1-SNAPSHOT
+	Name: package
+	[[Value:com.rk.osgi.karaf.declarativeconsumer]]
+Finish
+Remove Activator.java
+**Update the pom.xml file**
+--------------------
+Add quote dependency, scr annotation dependency, slf4j dependency
+	**<!-- Quote dependency -->**
+		<dependency>
+			<groupId>com.rk.osgi.karaf</groupId>
+			<artifactId>com.rk.osgi.karaf.quote</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
+		**<!-- SCR- Service component annotation dependency -->**
+		<dependency>
+			<groupId>biz.aQute</groupId>
+			<artifactId>bndlib</artifactId>
+			<version>2.0.0.20130123-133441</version>
+		</dependency>
+
+		**<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->**
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.25</version>
+		</dependency>
+
+	**<Service-Component>*</Service-Component>**
+
+
+**Create ConsumerComponent.java as follow**
+
+package com.rk.osgi.karaf.declarativeconsumer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.rk.osgi.karaf.quote.IQuoteService;
+import aQute.bnd.annotation.component.Activate;
+import aQute.bnd.annotation.component.Component;
+import aQute.bnd.annotation.component.Deactivate;
+import aQute.bnd.annotation.component.Reference;
+
+**@Component (name = ConsumerComponent.COMPONENT_NAME)**
+public class ConsumerComponent
+{
+	public static final String COMPONENT_NAME = "CunsumerComponent";
+	public static final String COMPONENT_LABEL = "Cunsumer Component";
+	private static final Logger LOG = LoggerFactory.getLogger(ConsumerComponent.class);
+	**private IQuoteService quoteService;**
+
+	/**
+	 * Called when all of the SCR Components required dependencies have been satisfied.
+	 */
+	**@Activate**
+	public void activate()
+	{
+		LOG.info("Activating the " + COMPONENT_LABEL);
+		System.out.println(quoteService.getQuote());
+		LOG.info("Activating the Quote Value " + quoteService.getQuote());
+	}
+
+	/**
+	 * Called when any of the SCR Components required dependencies become unsatisfied.
+	 */
+	**@Deactivate**
+	public void deactivate()
+	{
+		LOG.info("Deactivating the " + COMPONENT_LABEL);
+	}
+
+	**@Reference**
+	public void setQuoteService(final IQuoteService quoteService)
+	{
+		this.quoteService = quoteService;
+	}
+	public void unsetQuoteService(final IQuoteService quoteService)
+	{
+		this.quoteService = null;
+	}
+}
+
+**Note: We need to enable scr declarative service before installing bundle**
+	>**feature:  install scr**
+	> scr <tab>------ verify scr installation
+	>scr:list -----------	It should show two components.
+	**karaf@root()> list**
+	START LEVEL 100 , List Threshold: 50
+	ID | State  | Lvl | Version        | Name
+	---+--------+-----+----------------+---------------------------------------------
+	28 | Active |  80 | 4.1.1          | Apache Karaf :: OSGi Services :: Event
+	52 | Active |  80 | 0.0.1.SNAPSHOT | com.rk.osgi.karaf.secondbundle Bundle
+	53 | Active |  80 | 1.0.0.SNAPSHOT | Apache Karaf :: Shell custom Commands
+	54 | Active |  80 | 1.0.0          | com.rk.osgi.karaf.quote Bundle
+	55 | Active |  80 | 1.0.0          | com.rk.osgi.karaf.quoteservice Bundle
+	56 | Active |  80 | 0.0.1.SNAPSHOT | com.rk.osgi.karaf.quoteconsumer Bundle
+	62 | Active |  80 | 0.0.1.SNAPSHOT | com.rk.osgi.karaf.declarativeconsumer Bundle
+	63 | Active |  80 | 0.0.1.SNAPSHOT | com.rk.osgi.karaf.declarativeservice Bundle
+	**karaf@root()> scr:list**
+	 BundleId Component Name Default State
+		Component Id State      PIDs (Factory PID)
+	 [  60]   ScrServiceMBean  enabled
+		[   0] [active      ]
+	 [  62]   CunsumerComponent  enabled
+		[   1] [active      ]
+	 [  63]   com.rk.osgi.karaf.declarativeservice.QuoteService  enabled
+		[   2] [satisfied   ]
+
+* we can check karaf log @data/log/karaf.log
+**6) Service Tracker Using Maven Plugin Karaf**
+We are going to access the Service using Servicetracker. We will be using the earlier Quote service,
+
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation-> do not select any template
+Select:org.apache.karaf.archetypes(	karaf-bundle-archetype) 4.0.0
+->Next
+New MavenProject:
+	com.rk.osgi.karaf
+	com.rk.osgi.karaf.servicetracker.consumer
+	0.0.1-SNAPSHOT
+	Name: package
+	[[Value:com.rk.osgi.karaf.servicetracker.consumer]]
+Finish
+
+Add/Declare dependencies: osgi.util.tracker,osgi.util and quote dependencies
+--------------------------------------------------------------------- 
+<!-- Quote dependency -->
+	**<dependency>**
+**		<groupId>com.rk.osgi.karaf</groupId>**
+**		<artifactId>com.rk.osgi.karaf.quote</artifactId>**
+**		<version>1.0.0</version>**
+**	</dependency>**
+        
+	  **<Import-Package>**
+**			org.osgi.util.tracker,org.eclipse.osgi.util,com.rk.osgi.karaf.quote,***
+**      </Import-Package>**
+
+**Create MyQuoteServiceTrackerCustomizer.java class**
+----------------------------------------------------- 
+package com.rk.osgi.karaf.servicetracker.consumer;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
+
+import com.rk.osgi.karaf.quote.IQuoteService;
+
+public class MyQuoteServiceTrackerCustomizer implements ServiceTrackerCustomizer
+{
+	private final BundleContext context;
+
+	public MyQuoteServiceTrackerCustomizer(BundleContext context)
+	{
+		this.context = context;
+	}
+
+	private MyThread myThread;
+
+	public Object addingService(ServiceReference reference)
+	{
+		IQuoteService service = (IQuoteService) context.getService(reference);
+		myThread = new MyThread(service);
+		myThread.start();
+		return service;
+	}
+
+	public void modifiedService(ServiceReference reference, Object service)
+	{
+		// removedService(reference, service);
+		// addingService(reference);
+	}
+
+	public void removedService(ServiceReference reference, Object service)
+	{
+		System.out.println("How sad. Service for quote is gone");
+		myThread.stopThread();
+	}
+
+	public static class MyThread extends Thread
+	{
+		private volatile boolean active = true;
+		private final IQuoteService service;
+
+		public MyThread(IQuoteService service)
+		{
+			this.service = service;
+		}
+		public void run()
+		{
+			while (active)
+			{
+				System.out.println(service.getQuote());
+				try
+				{
+					Thread.sleep(5000);
+				}
+				catch (Exception e)
+				{
+					System.out.println("Thread interrupted " + e.getMessage());
+				}
+			}
+		}
+		public void stopThread()
+		{
+			active = false;
+		}
+	}
+}
+
+
+
+**Register a service tracker in your activator so that it can consume the QuoteService using Service Tracker**
+--------------------------------------------------- 
+package com.rk.osgi.karaf.servicetracker.consumer;
+
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.util.tracker.ServiceTracker;
+
+import com.rk.osgi.karaf.quote.IQuoteService;
+
+public class Activator implements BundleActivator
+{
+
+	private static BundleContext context;
+	**private ServiceTracker serviceTracker;**
+
+	static BundleContext getContext()
+	{
+		return context;
+	}
+
+	public void start(BundleContext bundleContext) throws Exception
+	{
+		Activator.context = bundleContext;
+		System.out.println("Starting quoteconsumer bundles");
+		// Register directly with the service
+		**MyQuoteServiceTrackerCustomizer customer = new MyQuoteServiceTrackerCustomizer(context);**
+		**serviceTracker = new ServiceTracker(context, IQuoteService.class.getName(), customer);**
+		**serviceTracker.open();**
+	}
+
+	public void stop(BundleContext bundleContext) throws Exception
+	{
+		Activator.context = null;
+		System.out.println("Stopping quoteconsumer bundles");
+		**serviceTracker.close();**
+	}
+
+}
+
+**build and deploy the bundle.**
+
+**7) OSGI HTTP Service with Karaf** 
+File->New->Project/Other->Maven->Maven Project->Next->Use Default worklocation-> do not select any template
+Select:org.apache.karaf.archetypes(	karaf-bundle-archetype) 4.0.0
+->Next
+New MavenProject:
+	com.rk.osgi.karaf
+	com.rk.osgi.karaf.httpservice
+	0.0.1-SNAPSHOT
+	Name: package
+	[[Value:com.rk.osgi.karaf.httpservice]]
+Finish
+
+**Add HttpServlet dependency in pom.xml and import httpservlet and osgi tracker**
+
+	<!-- https://mvnrepository.com/artifact/javax.servlet/servlet-api -->
+		**<dependency>**
+	**		<groupId>javax.servlet</groupId>**
+	**		<artifactId>servlet-api</artifactId>**
+	**		<version>2.5</version>**
+	**		<scope>provided</scope>**
+	**	</dependency>**
+	<!-- https://mvnrepository.com/artifact/org.osgi/org.osgi.service.http -->
+		**<dependency>**
+	**		<groupId>org.osgi</groupId>**
+	**		<artifactId>org.osgi.service.http</artifactId>**
+	**		<version>1.2.1</version>**
+	**		<scope>provided</scope>**
+	**	</dependency>**
+	
+	**<Import-Package>**
+	**		javax.servlet.http,org.osgi.util.tracker,***
+**	  </Import-Package>**
+
+
+**Create HelloWorldServlet.java which extends HttpServlet class**
+
+package com.rk.osgi.karaf.httpservice;
+
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class HelloWorldServlet extends HttpServlet
+{
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
+	{
+		resp.setContentType("text/html");
+		resp.getWriter().write("<html><body>Hello World – OSGI servlet</body></html>");
+	}
+}
+
+**Update Activator.java**
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE file distributed with this work
+ * for additional information regarding copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations
+ * under the License.
+ */
+package com.rk.osgi.karaf.httpservice;
+
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.http.HttpService;
+import org.osgi.util.tracker.ServiceTracker;
+
+public class Activator implements BundleActivator
+{
+
+	**private ServiceTracker httpServiceTracker;**
+
+	public void start(BundleContext context)
+	{
+		**httpServiceTracker = new HttpServiceTracker(context);**
+**        httpServiceTracker.open();**
+		System.out.println("Starting the bundle");
+	}
+
+	public void stop(BundleContext context)
+	{
+		**httpServiceTracker.close();**
+**        httpServiceTracker = null;**
+		System.out.println("Stopping the bundle");
+	}
+
+	**private class HttpServiceTracker extends ServiceTracker**
+**    {**
+
+**        public HttpServiceTracker(BundleContext context)**
+**        {**
+**            super(context, HttpService.class.getName(), null);**
+**            System.out.println(" Hello 1 from HttpService Service Tracker! ");**
+**        }**
+
+**        public Object addingService(ServiceReference reference)**
+**        {**
+**            HttpService httpService = (HttpService) context.getService(reference);**
+**            System.out.println(" Hello 2 " + httpService);**
+**            try**
+**            {**
+**                httpService.registerServlet("/helloworld", new HelloWorldServlet(), null, null);**
+**                System.out.println(" Hello 3 " + httpService);**
+**            }**
+**            catch (Exception e)**
+**            {**
+**                e.printStackTrace();**
+**            }**
+**            return httpService;**
+**        }**
+
+**        public void removedService(ServiceReference reference, Object service)**
+**        {**
+**            HttpService httpService = (HttpService) service;**
+**            httpService.unregister("/helloworld");**
+**            super.removedService(reference, service);**
+**        }**
+**    }**
+}
+
+**Do mvn clean install then deploy in karaf**
+**>tree-show <bid>**
+Deployed bundle will be in installed state and shows unresolved dependencies- javax.servlet,javax.servlet.http and org.osgi.service.http. as Container has no such bundle which export these bundles.
+So, Install http feature.
+**> feature:install http**
+Then this bndle come to Active state.
+**>tree-show <bid>**
+
+Open Web browser the type : http://localhost:8181/helloworld
+**If you want to changes the port then, You can update etc/org.ops4j.pax.web.cfg**
+**etc/jetty.xml**
+**org.osgi.service.http.port** 
+**org.osgi.service.http.port.secure**
+**org.ops4j.pax.web.config.file=<jetty.xml path>**
+**javax.servlet.context.tempdir=<pax-web-jsp>**
+
+
+

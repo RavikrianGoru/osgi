@@ -1,0 +1,323 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2018-03-16T11:42:28+05:30
+
+====== OSGi External Training ======
+Created Friday 16 March 2018
+
+Open Service Gateway initaiative: defines a way to create true madules and a way for those modules  to interact at runtime.
+Modules(bundles) in OSGi can be installed, uninstalled , updated  without restating JVM.
+**OSGi service platform  is a dynamic module system for java.**
+OSGi service platform =OSGi framework + OSGi Service
+
+**OSGi framework Implementations:**
+	Eclipse Equinox
+	Apache Felix
+	Knopflerfish
+	karaf
+	
+**The unit of mudularization  in OSGi is called bundle.**
+Bundle = Jar + manifest file
+
+Bundle:
+	 private packages
+	 exported packages
+	 imported packages
+
+**Apache felix, Equinox  are onpen source OSGi framworks(implemenatations)**
+**Apache karaf ia a modern and polumorphic  container. It is lighweight, powerful platform.**
+It can be run  as standalone  as a container, run anywhere(Any machine with java, cloud, docker image)
+karaf is the perfect platform for microservices, system integration, big data ...etc
+
+bundle development,
+feature development---repo-add
+kar generation
+web application development
+
+**Maven** is automation build tool provides build life cycle., clean , install, project creation, pom file, dependecy management, compilation, autometed tests, packaging, deployment....etc
+
+**Bundle Life cycle:**
+	Installed		: The bundle has been – successfully installed.
+	Resolved	: All Java classes that the bundle needs are available. This state indicates that the bundle is either ready to be started or has stopped.
+	Starting		: The bundle is being started, the **BundleActivator start method will be called, and this method has not yet returned.**
+	Active		: The bundle has been successfully activated and is running; its **Bundle Activator start method has been called and returned.**
+	Stopping	:The bundle is being stopped. **The BundleActivator.stop method has been called but the stop method has not yet returne**d.
+	Uninstalled	: The bundle has been uninstalled. It cannot move into another state.
+	
+**OSGi Framework provides service oriented interaction pattern among bundles:**
+
+				  [publish]								[Find]
+**Service Provides**------------------**>Service Registery<**-------------------------**Service Requester**
+	|																	       |
+	|**<-**--------------------------------------------------------------------------------**->**|
+							[Interact]
+
+* Service Provides bundle registers the service interface and service properties and service implementation into the OSGi service reqiserty.
+* Service Requester bundle retrieves the service interface and service properties  from the OSGi service registery.
+* The OSGi service registry acts as the mediator, isolating the provider from the requestor.
+* The service provider bundle owns the service interface, service properties, and service implementation. The service requestor bundle uses the service interface and service properties, but it can’t access the service implementation
+
+**A service is Java object published in the framework service registry.**
+
+Service has three parts:
+	Service Interface
+	Service [[Implementation]]
+	Service Properties
+
+OSGi Service Registry:
+	* It allows services to be registered and deregistered by the service provider bundle.
+	* It allows services to be retrieved and released by the service requestor bundle.
+
+**Registering service:**
+public class Activator implements BundleActivator 
+{
+	public void start(BundleContext bc) 
+	{	
+		Hashtable props = new Hashtable(); props.put("language", "en");
+		//Registering the HelloWorld service
+		bc.registerService(HelloService.class.getName(), new HelloServiceImpl(), props);
+	}
+	public void stop(BundleContext bc) 
+	{
+	}
+}
+
+**Using service:**
+public void start(BundleContext **bc**) 
+{
+	//Get the service reference for HelloService
+	**ServiceRef = bc.getServiceReference(HelloService.class.getName());**
+	//service reference can be null, if the service is not registered.
+	if(serviceRef != null)
+	 {
+		helloService = (HelloService)bc.getService(serviceRef);
+	}
+	 else
+	 {
+		System.err.println("service reference not found.");
+	}
+
+
+	//service can be null..
+	if (helloService!=null) 
+	{
+		helloService.sayHello();
+	}
+	 else
+	 {
+		System.err.println("No HelloService found!");
+	}
+}
+
+//**Once the bundle finished utilizing the service, It should release service using the following mechanism.**
+public void stop(BundleContext bc){
+	if (helloService!=null) 
+	{
+		**bc.ungetService(serviceRef);**
+		**helloService =null; **
+		**serviceRef= null;**
+	}
+	 else 
+	{
+		System.err.println("HelloService is null!");
+	}
+}
+
+**One ClassLoader per bundle.**
+	Controls what is visible from the bundle.
+	   Controls what is visible from other bundle.
+* The provider bundle export the Java packages that are meant to be shared, and then have the consumer bundle import the Java packages that it needs.
+
+**OSGi provides native support for bundle versioning.**
+	With OSGi, a bundle can specify a version for each package being exported, and conversely a bundle can specify version ranges when importing packages.
+	Ex:
+		**Export-Package: <packageName>;version="[<versionNo>]"**
+		**Import-Package:<packageName>;version="[1.0,2.0)"**
+	  With OSGi, a bundle can export specific classes and restrict other classes.
+	Ex:
+		**Export-Package: <packageName>;include="A*,B"; exclude=CImpl**
+		**Bundle-SymbolicName: <packageName1>**
+		**Require-Bundle: <packageName2>; visibility:=reexport**
+	The OSGi framework defines the manifest header DynamicImport-Package, which can be used to specify Java packages that can be dynamically searched at runtime to load Java classes.
+	Ex:
+		**DynamicImport-Package: org.apache.derby.jdbc**
+	In OSGi, you can specify a package that’s being imported as optional. This means that the framework will attempt to wire this class during the resolve process, as the bundle is being
+	installed, but it won’t consider it an error if the package isn’t found.
+	Ex:
+		**Import-Package: org.apache.derby.jdbc;resolution:=optional**
+	
+	Fragment bundles are degenerated bundles that need to attach to a host bundle in order to function.
+	Ex:	
+		**Fragment-Host: manning.osgi.federateddatabase**
+
+**Componect Framework:**
+There are three choices to implements components:
+	1) Declarative Services;
+	2) Spring Dynamic Modules
+	3) Apache iPOJO.
+**Declarative service:** It is not necessary to register or consume services programmatically
+SCR- Development component
+	Service API
+	Service Provides
+	Service Consumer
+* Components are created using Declarative Services (DS) using annotations – Interpret it to XML by bndtools.
+
+**@Component : **This annotation identifies the annotated class as a service component.
+Ex:	
+	**@Component(name="**ConsumerComponent**", immeditae=**true**, property="**prop1=value1**")**
+
+**@Reference: **It should be applied to a method which will be used as a “bind” method of a service component.
+Ex:
+	**@Reference(name**="http.service", **service=**HttpService.class, **cardinality=**ReferenceCardinality.MANDATORY, **policy=**ReferencePolicy.STATIC, **unbind=**"unsetHttpService")
+
+**@Activate, @Deactivate, @Modified **are used with the respective methods that will be called when the service component state changes from one to another.
+
+
+**Best Practice for accessing  OSGi bundle:**
+* OSGi server must be - volatile
+* Expect  [[RuntimeException]] when calling service
+* Use [[ServiceTracker]]
+* Use White board model
+
+**ServiceTracker: **Finding services for each message is kind of expensive. The service tracker is used to track channels and store them in a Map.
+A service tracker maintains a list of services based on:
+	– A filter
+	– A specific class
+The tracker guarantees to hold all currently available services
+**Sample code:**
+		MyQuoteServiceTrackerCustomizer customer = new MyQuoteServiceTrackerCustomizer(context);
+		serviceTracker = new ServiceTracker(context, IQuoteService.class.getName(), customer);
+			serviceTracker.open();
+**Compendium Service:**
+	In addition to the core services, the OSGi Alliance defines a set of non-core standard services called the compendium services.
+	Whereas the core services are typically available by default in a running OSGi framework, the compendium services aren’t.
+	These services are provided as separate bundles by framework implementers or other third parties and typically work on all frameworks.
+Ex:
+	Log Service
+	HTTP Service
+	
+**Log Service:** provide a common logging service for an OSGi framework. Log Service provides a simple logging facade, with various flavors of methods. 
+Sample code:
+------------- 
+**log(int level, String message, Throwable exception)**
+
+LogService log = null;
+ServiceReference ref = context.getServiceReference(LogService.class.getName());
+if (ref != null)
+{
+	log = (LogService) context.getService(ref);
+}
+
+**HTTP Service: **A means for bundles to expose servlets  or  resources  to be accessed  through Http. To provide content in HTML, XML.  The bundles register their content and servlets in a dynamicmanner.
+
+**HttpService Implementation:**
+----------------------------- 
+* Initialized the registered servlets.
+* Interfacing with the outside world.
+* Delegating requests to the corresponding servlet
+* Providing the resulting content back to the requesting party
+Ex:
+	alias /myServlet
+	http://localhost:8080/myServlet.
+The customization of the base URL is part of the configuration of Http Service implementation.
+
+* Find the HTTP Service like any other OSGi service:
+	String name= HttpService.class.getName();
+	**ServiceReference ref=ctx.getServiceReference(name);**
+	if(ref!=null)
+	{
+		**HttpService service=(HttpService) ctx.getService(ref);**
+		if( service!null)
+		{
+			//do something
+		}
+	}
+* Registering HTTPService
+	Hashtable initParams=new Hashtable();
+	initParams.put("paramName", "paramValue");
+	**getHttpService().registerServlet("/alias", new MyServlet(), initParams, null);**
+	
+	The servlet alias must be unique in the context of the Http Service!
+* [[UnRegister]] HTTPService
+	**getHttpService().unregister("/alias");**
+	
+* Configuring the HTTP Service
+	- The HTTP Service is registered by an implementation bundle.
+	- The client has no control over the port or URL on which the service is running
+	- **etc/jetty.xml**
+	- **org.osgi.service.http.port** —Specifies the port used for servlets and resources accessible via HTTP. The default value is 80.
+	- **org.osgi.service.http.port.secure**—Specifies the port used for servlets and resources accessible via HTTPS. The default value is 443.
+
+**Embeded a server in Karaf:**
+----------------------------- 
+* Forced to use OSGi HTTP Service
+* Great for new web applications built from scratch.
+* Complicates the development effort required for making an existing WAR file work with this setup.
+
+**Embedding Karaf in a WebContainer: ** Using Jetty: Quick and Easy
+
+Run bin/client.bat
+>feature:list
+
+
+Some other commands:
+------------------------ 
+command to list the current defined realms and select 1st user as login
+ > [[jaas:realm-list]]
+ > jaas:realm-manage --index 1
+
+commands to list users 
+> jaas:user-list
+command to add user and commit  our changes
+> jaalog:display | more | grep ERRORs:user-add ravi ravi
+> jaas:update
+
+command to list the current defined realms and select 1st user as login and check our changes
+ > [[jaas:realm-list]]
+ > jaas:realm-manage --index 1
+> jaas:user-list
+
+> jaas:group-add ravi admingroup
+> jaas:update
+ > [[jaas:realm-list]]
+ > jaas:realm-manage --index 1
+> jaas:user-list
+
+**Troubleshooting Issues:**
+The bundle:diag command gives you details about a bundle is not active:
+**> bundle:diag**
+
+>bundle:headers <bid>
+
+The shell:stack-traces-print command prints the full stack trace when the execution of a command throws an exception.
+**> shell:stack-traces-print {true/false}**
+
+To see the bundle dependecy tree based on  the wiring information of a given single bundle ID.
+> **budle:tree-show**
+
+To check the log msgs
+**> log:display | more | grep ERROR**
+
+To check the log exceptions
+**> log:exception-exception**
+
+**Performance Tuning:**
+If you encounter issues like performance degradations, weird behaviour, it could be helpful to have a kind of snapshot about the current activity of the container.
+**karaf@root()> dev:dump-create**
+**Created dump zip: 2018-03-20_012827.zip**
+
+**Monitoring:**
+Karaf uses JMX for monitoring and management of all Karaf components. 
+we can use jconsole, jmc,javavisualVM ... etc
+
+**To connect any monitoring tool from remote client, we have to set the following properties**
+
+vi /opt/osgi/apache-custom-karaf-4.1.4/bin/setenv
+export KARAF_OPTS="$KARAF_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=1100 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -XX:+UnlockCommercialFeatures -XX:+FlightRecorder"
+
+**Then**
+ we can user <vmName/IP>:1100 to connect from remote client
+
+org.ops4j.pax.web.server.minThreads=8
+org.ops4j.pax.web.server.maxThreads=15
+
