@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.rk.osgi.karaf</groupId>
+	<artifactId>com.rk.osgi.karaf.httpservice</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>bundle</packaging>
+
+	<name>com.rk.osgi.karaf.httpservice Bundle</name>
+	<description>
+        com.rk.osgi.karaf.httpservice OSGi bundle project.
+    </description>
+
+	<properties>
+		<maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
+		<osgi.version>6.0.0</osgi.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<version>${osgi.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/javax.servlet/servlet-api -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.osgi/org.osgi.service.http -->
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.service.http</artifactId>
+			<version>1.2.1</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>${maven-bundle-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						<Bundle-Activator>com.rk.osgi.karaf.httpservice.Activator</Bundle-Activator>
+						<Export-Package>
+							com.rk.osgi.karaf.httpservice*;version=${project.version}
+						</Export-Package>
+						<Import-Package>
+							javax.servlet.http,
+							org.osgi.util.tracker,*
+						</Import-Package>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
