@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Firstbundle
+Bundle-SymbolicName: com.rk.osgi.firstbundle
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: com.rk.osgi.firstbundle.Activator
+Bundle-Vendor: RK
+Require-Bundle: system.bundle
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ActivationPolicy: lazy
