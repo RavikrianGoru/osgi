@@ -1,0 +1,542 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2018-03-15T00:38:42+05:30
+
+====== Karaf_learnings: ======
+http://www.javaindeed.com/playing-with-apache-karaf-console/
+https://dzone.com/articles/building-cxf-rest-service-osgi
+https://karaf.apache.org/manual/latest-2.x/developers-guide/archetypes.html
+
+**Karaf installation:**
+
+Download and extract.
+Set Env variables
+
+Go to bin folder:
+	Double click  **karaf.bat** to first boot / start karaf
+	>**shoutdown -f  or Ctrl+D**
+	
+**Karaf commands:**
+	>help
+	>install				It addes bundle into container
+	>uninstall			It removes bundle from container
+	>start				It starts the bundle if bundle is in resolved state.
+	>stop
+	>resolve				to wire all dependecies of bundle
+	>refresh				refreshes the wiring.  it causes the container to recalculate the dependencies.
+	>update				reinstall or rewired  bundle
+	>list				displays bundles
+		> list -t 0
+		>la
+	>info				karaf, JVM, threads , memory, classes and OS info
+	>headers			bundle manifest info
+	>imports -b 			displays imported packages info by bindleID
+	>exports -b			displays the expoed packages.
+	>start-level <id>		Shows start level
+	**Bundle-Level:** This obtains or sets the start level of a particular bundle. Bundles with start levels above the current run level cannot start.
+	>framework			displays framework info
+	>tree-show			show tree form of dependencies and transitive dependencies of specified bundle.
+	>dump-create		creates dump for memory,threads, features, bundle,environment and heapdump zip file
+	>dynamic-bundle	enable/disable dynamic imports by id
+	>watch	<bundleN>	watch to update latest bundle version.
+	>stack-traces-print 	sets printstack trace: displays stack trace when command execution fails. give wrong cmd and check
+	>shutdown			stops the karaf instance.			
+
+	>shell:<tab>
+	>bundle:<tab>
+	>instance:<tab>
+	>feature:<tab>
+	>log:<tab>
+	>config:<tab>
+	>
+**Remote console access:**
+
+ssh connection details : karaf/karaf, port 8101, 
+ref: **org.apache.karaf.shell.cfg** and **users.properties**
+
+S**tart karaf:  when we dont want to interactive console.**
+	bin/start.bat 
+
+**Apache Karaf client**
+	bin/start.bat
+	bin/client.bat
+	
+	bin# **client –a 8101 –h localhost –u karaf –p karaf –r 3 –d 5 info**
+
+**Custom command creation:**
+Ref: https://karaf.apache.org/manual/latest-2.x/developers-guide/archetypes.html
+
+create mvn project thorugh command line console:
+	$ mvn archetype:generate \
+	 -DarchetypeGroupId=org.apache.karaf.archetypes \
+	 -DarchetypeArtifactId=karaf-command-archetype \
+	 -DarchetypeVersion=2.3.2 \
+	 -DgroupId=com.rk.karaf \
+	 -DartifactId=com.rk.karaf.command \
+	 -Dversion=1.0.0-SNAPSHOT \
+	 -Dpackage=com.rk.karaf
+	
+	It will build the project and prompt the command name, description and scope as follow
+	
+	>Define value for property 'command': rkcmd
+	>Define value for property 'description': this is custom command for testing
+	>Define value for property 'scope': custom                               [bundle,scr..... are scopes]
+	
+	it will create project and import the project in IDE.
+	create CommandCompleter.java class Ref code.
+	update blueprint xml file Ref code
+	
+	Do mvn clean install if you face any problem : clean m2/repository then run
+	>mvn clean install
+	copy the generated bundle(jar) from target folder to deply folder.
+	>list
+	>custom:rkcmd
+
+**Monitoring tools such as jconsole, java visualVM, & JMC**
+
+	Need to set karaf properties to connect JMC/Jconsole/JavaVisualVM
+	**vi /opt/osgi/apache-custom-karaf-4.1.4/bin/setenv**
+	**export KARAF_OPTS="$KARAF_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=1100 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -XX:+UnlockCommercialFeatures -XX:+FlightRecorder"**
+	
+	
+**JMX-Java Management Extention:**
+	
+	default port : 1099
+	Ref: **org.apache.karaf.management.cfg**
+	connect jconsole -->Mbeans
+	We can check and update properties.
+	JMX has sensitive nature of capabilities so, it can be restricted to access JMX port. we will see later.
+
+**Optional Web console:**
+It provides GUI  to see  sysstem status,deployed artifacts,configurations, web-shell issuing cmds.
+
+**Install web console: Required net connection.**
+> [[feature:install]] webconsole
+Open browser:  http://localhost:8181/system/console
+Credentials:	    karaf/karaf
+
+**System configuration and tuning:**
+	Apache karaf installation has several default configuration @ [[/etc/*]] , we will update default configurations for **Remote access, Log properties & system properties.**
+ 
+**Remote access:**
+	**i) etc/org.apache.karaf.shell.cfg**
+				sshPort=8101
+				sshHost=0.0.0.0
+				sshRealm=karaf
+				hostKey=${karaf.etc}/host.key
+		  sshHost, sshPort..... to connect system from remote client.
+	 **ii) etc/user.properties file **is used for user properties such as  login credentials .. etc
+					karaf=karaf,admin----------->[user=pwd,role...]
+	 **iii) etc/System.properties file** is used to set admin properties
+ 
+ **Log Properties:**
+	The logging system for karaf is base on OPS4J PAX logging and the backend uses log4j.
+	**i) File Logging: **
+	**etc/org.ops4j.pax.logging.cfg** file is used to define appenders, log level ... etc.
+	Ref: # Rolling file appender in above cfg file.
+	**ii) Console Logging:**
+	**etc/org.apache.karaf.log.cfg** is used to configure [[log:display]] and [[log:exception-display]] cmds.
+	We can set and view the logs from console. which is useful to debug the bundle startup failures.
+	>log:display
+	>log:exception-display
+	>log:get
+	>log:clear
+	>log:set <LEVEL> <package>
+		[[log:set]] DEBUG/WARN/INFO/ERROR org.eclipse.jetty
+	Logging per bundle can be activated by setting the following property in **org.ops4j.pax.logging.cfg** file
+	**log4j.rootLogger=INFO, out, sift , osgi:VmLogAppender**
+	After restarting we can see log files as data/log/<bundleName>.log
+	>log:tail
+	tail -f data/karaf.log
+
+**System Properties**
+The system properties are the values that can alter how the karaf instance is set up fo runtime and rae available as Java system properties.
+
+**Configuring karaf:** 
+The first file to be aware of  is the **etc/config.properties** file. It provieds default configurations.
+The **custom.properties** file is reffered  from the **config.properties** file so that user can overried  default configurations without  having to alter system default properties.
+**This changes will be useful while upgrading karaf.** (by moving custom.properties file in new instance).
+
+To reflect these custom.properties file changes update **config.properties** ad bellow.
+${includes} = jre.properties custom.properties **my.properties**
+uncomment the following line
+${optionals} = my.properties
+Create my.properties file in [[etc]] folder
+
+**Setting Environment variables:**
+we update environment variables in **bin/setEnv** file running from bin directory.
+ export JAVA_MIN_MEM=128M # Minimum memory for the JVM
+ export JAVA_MAX_MEM=1024M # Maximum memory for the JVM
+ export JAVA_PERM_MEM=128M # Minimum perm memory for the JVM
+ export JAVA_MAX_PERM_MEM=256M # Maximum perm memory for the JVM
+
+**Configuring hot deployment:**
+Awesome feature of OSGi container is the ability to hot deploy. Drop jar file or spring/Blueprint-based xml file into bin/deploy folder and have it deployed without restart the karaf container.
+Define where that folder is located in the etc/org.
+**apache.felix.fileinstall-deploy.cfg file:**
+	felix.fileinstall.dir           = ${karaf.base}/deploy
+	felix.fileinstall.tmpdir        = ${karaf.data}/generated-bundles
+	felix.fileinstall.poll          = 1000
+
+First you have the location of the deploy directory defined by felix.fileinstall.dir. The default is ${karaf.base}/deploy. This means that we can drop files in that location and they will be picked up by the framework and deployed into the runtime.
+
+**Console Configuration commands:**
+>**config:list**			displays all configuration which can be controlled through console.
+	pid: 
+	BundleLocation:
+	Properties:
+
+**To change/update a property**
+	1) >**config:edit** <pid>
+		>**config:edit** org.apache.felix.fileinstall.d3c0a5d7-af3b-40f0-b1b0-29059a0fb6ef
+	2) >**config:propset [property] [value]**
+		>**config:propset** felix.fileinstall.poll 2000
+	3) **>config:update**
+	
+* After doing the update, rerun config:list and ensure that the changes have been made. Reopen the configuration file and verify that it has also been updated
+* Changes can be rolled back or canceled using the following from the command line:
+	**>config:cancel**
+
+* We can update config properties from web console.
+
+**Failover Configuration**
+Karaf can also be set up in a master/slave configuration for high availability using either file locking or JDBC locking. To set up file locking on a Karaf instance, alter the etc/system.properties file by adding the following:
+	**karaf.lock**=true (this will indicate that locking should be used)
+	**karaf.lock.class**=org.apache.karaf.main.SimpleFileLock (the type of lock)
+	**karaf.lock.dir**=[PathToDirectory] (the location of the lock)
+	**karaf.lock.delay**=10 (indicates how often to check for lock)
+
+**Startup properties:**
+The **etc/startup.properties** file is used to define the core services and their start levels on Karaf.
+
+ These are not the only properties that can impact the Karaf startup. There is often the need to add features to the default installation. 
+This can be done by altering the **etc/ org.apach.karaf.features.cfg** file to include custom or optional features.
+	
+**Provisioning: One of the most important parts of developing and deploying dynamic systems is to have a flexible and accessible provisioning model.**
+
+**Apache Maven repository:**
+Downloaded and built dependencies are stored in **.m2/repository/**...
+**The Karaf system repository:**
+Karaf also provides a second "**system**" repository. The **system** repository is the fastest way of loading artifacts into Karaf. It is also a very convenient place to put third-party dependencies in custom containers.
+
+**Apache karaf features:**
+Apache Karaf provides you with a mechanism to build applications or more complex deployment descriptors. It is a complete solution for building and deploying "Applications".
+
+**Feature:**
+Applications here are defined as a set or several sets of JARs that together define what is necessary to have on the classpath in a running system. In the Apache Karaf world, this concept is called features.
+
+* The complete schema for the feature descriptor can be found at **http://karaf.apache.org/xmlns/features/v1.1.0**
+* A feature is an XML snippet containing a collection of bundles, features, configurations, and repository definitions.
+* "**feature:**" commands allow you to add, remove, install, uninstall, and refresh features.
+
+**Deploying Applications:**
+	* Deploying bundles
+	* Deploying feature descriptors
+	* Deploying non-OSGi jars
+	* Deploying WAR
+	* Deploying Spring/Blueprint
+	* Creating and deploying a Karaf archive
+
+**Bundle:** A bundle is a JAR file with an OSGi-compatible manifest file. The manifest file is a regular manifest file with additional OSGi-specific headers.
+Maven uses the Apache Felix Bundle Plugin to assemble and define the bundle based on XML configurations.
+The Felix Bundle Plugin utilizes the BND tool, which can also be used from the command line.
+
+**Building a bundle:**
+
+* First, let's look at the packaging type defined near the top of the file. It will read bundle as the packaging. This means that the build tool will create an OSGi-compliant JAR by adding the required headers to the manifest file:
+**<packaging>bundle</packaging>**
+
+* The next part to be aware of is the dependency section. The following is an example of one of the dependencies required for the custom command bundle:
+	**<dependency>**
+		**<groupId>org.apache.karaf.shell</groupId>**
+		**<artifactId>org.apache.karaf.shell.console</artifactId>**
+		**<version>2.3.2</version>**
+**	  <dependency>**
+* Finally, look at the bundle plugin. This defines and assembles the bundle for deployment:
+	**<groupId>org.apache.felix</groupId>**
+	**<artifactId>maven-bundle-plugin</artifactId>**
+	**<configuration>**
+		**<instructions>**
+			**<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>**
+			**<Export-Package>**
+				**com.your.organization*;version=${project.version}**
+			**</Export-Package>**
+			**<Import-Package>!${project.artifactId}*,**
+			**	.apache.felix.service.command,org.apache.felix.gogo.commands,org.apache.karaf.shell.console,**
+*****
+			**</Import-Package>**
+			**<Private-Package>!*</Private-Package>**
+		**</instructions>**
+	**</configuration>**
+* It is important to note that if you do not add the required import packages, an exception of type ClassNotFoundException may possibly occur when deployed.
+* Once this is deployed, they can easily be found using the headers command in the command console.
+
+**Different ways to deploy bundle:**
+
+* Deploying a bundle using hot deployments  using the mvn handler;
+	> **install mvn:com.your.organization/custom-command/1.0.0-SNAPSHOT**
+* Deploying a bundle using the file handler;
+	> **install file://[PathToFile]/custom-command-1.0.0-SNAPSHOT.jar**
+* Deploying a bundle using HTTP;
+	**> install http//[URLToFile]/custom-command-1.0.0-SNAPSHOT.jar**
+* Deploying a bundle using hot deployments;
+	copy and paste the jar in to [[/bin/deploy]] folder
+
+**LifeCycle of OSGi bundle:**
+	Install
+	Resolve
+	Starting
+	Active
+**Deploying feature descriptors**: feature descriptors are XML files that describe how to deploy a group of bundles or other features:
+
+**Ceating feature by using maven archetype:**
+	mvn archetype:generate \
+	-DarchetypeGroupId=org.apache.karaf.archetypes \
+	-DarchetypeArtifactId=karaf-feature-archetype \
+	-DarchetypeVersion=2.3.1 \
+	-DgroupId=com.rk.osgi.karaf.feature \
+	-DartifactId=myFeature \
+	-Dversion=1.0.0-SNAPSHOT \
+	-Dpackage=com.rk.osgi.karaf.feature.cmd
+
+**Run >mvn clean install**
+It will create feature.xml file in target/classes/.
+
+**Update feature.xml file**
+	<?xml version="1.0" encoding="UTF-8"?>
+	<features>
+		<feature name="custom-command">
+			<bundle>
+				mvn:com.rk.karaf/command
+			</bundle>
+		<feature>war</feature>
+		</feature>
+	</features>
+After altering the target/classes/feature.xml file, start up Karaf and execute the following command:
+**> feature:list**
+If this is a start from a clean slate, you will see that the war feature is available by default in the Karaf container, but is not installed:
+
+**Deploy feature:**
+* First, let's look at the simplest way. Copy the file into the [karaf]/deploy directory, and that's it!
+* Uninstalling the feature is just as simple. Remove the feature.xml file from the deploy directory. This will uninstall the feature and remove the URL from the features list.
+
+ > **feature:install custom-command**
+ > **feature:uninstall custom-command**
+* Maven can also be used to create and deploy features. This means setting up a pom. xml file to assemble the required components to make the bundle. Let's look at the example pom.xml file:
+	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+		<plugins>
+			**<plugin>**
+				**<groupId>org.apache.maven.plugins</groupId>**
+				**<artifactId>maven-resources-plugin</artifactId>**
+				**<executions>**
+					**<execution>**
+						**<id>filter</id>**
+						**<phase>generate-resources</phase>**
+						**<goals>**
+							**<goal>resources</goal>**
+						**</goals>**
+					**</execution>**
+				**</executions>**
+			**</plugin>**
+			**<plugin>**
+				**<groupId>org.codehaus.mojo</groupId>**
+				**<artifactId>build-helper-maven-plugin</artifactId>**
+					**<executions>**
+						**<execution>**
+							**<id>attach-artifacts</id>**
+							**<phase>package</phase>**
+							**<goals>**
+								**<goal>attach-artifact</goal>**
+							**</goals>**
+							**<configuration>**
+								**<artifacts>**
+									**<artifact>**
+										**<file>target/classes/features.xml</file>**
+										**<type>xml</type>**
+										**<classifier>features</classifier>**
+									**</artifact>**
+								**</artifacts>**
+							**</configuration>**
+						**</execution>**
+					**</executions>**
+			**</plugin>**
+		</plugins>
+	</build>
+* The first part is maven-resources-plugin, which allows you to filter resources and use Maven properties in your features.xml file.
+* The second plugin is configured to attach the filtered features.xml file.
+
+**Deploying non-OSGi JARs (wrap):**
+**1)** There are times when there is no OSGi-compliant bundle available for a third-party JAR that you need. Karaf supports the wrap protocol that provides the ability to alter a JAR to be OSGi-compliant.
+
+**Ex:** hsqldb.jar file (Version 1.8.0.10)
+
+> Download the jar and open in winzip chack the MANIFEST.MF file.
+> deploy it in bin/deploy folder the check headers **> bundle:headers <bid>**
+* Dropping the JAR in the deploy directory will still install the JAR into the OSGi container even though the JAR is not OSGi compliant. **What happens is the wrap protocol is automatically invoked. It will open the JAR and rewrite the manifest file.**
+* This will write the manifest.mf file to import *, which is not the best solution, but will work in a pinch.
+
+**2)** Another way to deploy this JAR is to add it to a features file. It just so happens that we have one to work from. Adding the following to the feature.xml file defined previously will demonstrate this functionality:
+	**<bundle>**
+		**file:///[PathToFile]/hsqldb/hsqldb.jar**
+	**</bundle>**
+* Dropping the new feature.xml file in the deploy directory results in an error.
+* When defining the bundle in a feature, the wrap protocol is not  automatically invoked. Checking the [karaf]/data/log/karaf.log file will exposethe exception that was thrown:
+	Unable to install features
+	org.osgi.framework.BundleException: Jar is not a bundle, no Bundle-SymbolicName file:///[PathToFile]/hsqldb/hsqldb.jar
+   > [[log:display]]
+* In the case of using the feature file, a wrap protocol must be specified as follows:
+	**<bundle>**
+		**wrap:file:///[PathToFile]/hsqldb.jar**
+	**</bundle>**
+* The same file can be installed directly using the command line from the Karaf console. The -s parameter is used to automatically start the bundle:
+  **> karaf@root>install –s wrap:file:///[PathToFile]/hsqldb.jar**
+
+
+* The **shade plugin** provides the capability to package an artifact in a special JAR, including its dependencies, and to shade (rename) the packages of some of the dependencies. To achieve fine-grained control over the classes from which the selected dependencies are included, artifact filters can be used:
+	<plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-shade-plugin</artifactId>
+		<version>2.1</version>
+		<executions>
+			<execution>
+				<phase>package</phase>
+				<goals>
+					<goal>shade</goal>
+				</goals>
+				<configuration>
+				<transformers>
+					<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+						<manifestEntries>
+							<Bundle-Name>hsqldb-shade</Bundle-Name>
+							<Bundle-Vendor>hsqldb</Bundle-Vendor>
+							<Bundle-Version>1.8.0.10</Bundle-Version>
+							<Bundle-ManifestVersion>2</Bundle-ManifestVersion>
+							<Bundle-Description>
+								shaded version of the hsqldb jar
+							</Bundle-Description>
+							<Bundle-DocURL>myProject.com</Bundle-DocURL>
+							<Export-Package>
+								org.hsqldb.index;uses:=org.hsqldb
+							</Export-Package>
+							<Import-Package>
+								javax.naming;resolution:=optional
+							</Import-Package>
+							<Bundle-SymbolicName>
+								org.hsqldb-shaded
+							</Bundle-SymbolicName>
+						</manifestEntries>
+					</transformer>
+				</transformers>
+				</configuration>
+			</execution>
+		</executions>
+	</plugin>
+
+* Many of the third-party JARs are available in OSGi compliant bundles, so look for them before shading.
+
+**Deploying WAR:**
+* Deploying a WAR file is also supported within the Karaf container.
+* In order to get a WAR file to deploy correctly and start, the war feature needs to be installed first.
+* karaf@root> **features:install war**
+* Just like the JAR file, the WAR file can be dropped in the [karaf]/deploy directory and it will be picked up, transformed to OSGi-compliant, installed, and started:
+* Download the sample.war from  http://tomcat.apache.org/tomcat-5.5-doc/appdev/sample/ then drop in bin/deploy folder.
+* Then open browner  http://localhost:8181/sample/hello.jsp
+* Even though this WAR is not OSGi-compliant, the Karaf container is transforming it using the PAX Web Extender. This is fine for development, but in a production environment, you should control the transformation using Maven or the command line, as we do with the JAR.
+* karaf@root>**headers <bid>**
+
+* The headers were automatically generated by PAX Web, and in most cases, these were not what you would want to use. Take Web-ContextPath for example
+	http://localhost:8080/sample
+
+* A more controlled way to deploy the WAR file, so that we can change the context path and symbolic name to something more meaningful by using the war or webbundle protocol provided by Pax Web:
+	**karaf@root> osgi:install -s webbundle:file:///[PathToFile]/sample.**
+	**war$Bundle-SymbolicName=tomcat-sample&Webapp-Context=/mySampleApp**
+* Notice the header definitions after $. This provides a way to change the header values from the command line. Now you would access the web page through the following URL:
+	http://localhost:8080/mySampleApp
+
+**Deploying Spring/Blueprint:**
+* Blueprint and Spring DM configuration files can also be deployed using the [karaf]/deploy directory.
+* The Blueprint or Spring transformer will parse the name of the configurations file to get the bundle-symbolicName and the bundle-version values.
+* If you need to customize the header values, just add the manifest tag to the configuration file in the following manner:
+	**<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0">**
+		**<manifest xmlns="http://karaf.apache.org/xmlns/deployer/blueprint/v1.0.0">**
+			**Bundle-Description="my awesome bundle"**
+		**</manifest>**
+	** ...**
+
+**> install -s spring:xxx:///[PathToFile]**
+**> install –s blueprint:xxx:///[PathToFile]**
+
+**Creating and deploying a Karaf Archive-(KAR):**
+* A Karaf Archive (KAR) file is basically a JAR file that contains feature descriptors and bundle JARs that can represent a full or partial deployment:
+* KARs can also be referenced as dependencies from Maven builds, making it easier to reference a project and its dependencies.
+* The purpose of the KAR archive is to perform the following:
+	* Read the feature descriptors for all feature definitions
+	* Resolve the bundles defined by the features
+	* Package all bundles, configurations, and dependencies required by the features
+* When using Maven to build the KAR, there are two parts of the process that need to be addressed. First is the pom.xml file that will utilize features-maven-plugin. 
+* Use the create-kar goal to create the KAR archive and list the features.xml files that it utilizes to assemble the bundles:
+		
+		<groupId>my.groupId</groupId>
+		<artifactId>my-kar</artifactId>
+		<version>1.0</version>
+		<packaging>pom</packaging>
+		
+		<dependencies>
+			<dependency>
+				<groupId>com.your.organization</groupId>
+				<artifactId>custom-command</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+				<scope>runtime</scope>
+			</dependency>
+		</dependencies>
+		
+		<build>
+			<plugins>
+				**<plugin>**
+					**<groupId>org.apache.karaf.tooling</groupId>**
+					**<artifactId>features-maven-plugin</artifactId>**
+					**<version>2.2.5</version>**
+					**<executions>**
+						**<execution>**
+							**<id>create-kar</id>**
+							**<goals>**
+								**<goal>create-kar</goal>**
+							**</goals>**
+							**<configuration>**
+								**<featuresFile>**
+									**${project.base}/[PathToFile]/features.xml**
+								**</featuresFile>**
+							**</configuration>**
+						**</execution>**
+					**</executions>**
+				**</plugin>**
+			</plugins>
+		 </build>
+
+* The other piece to this puzzle is the reference to the features.xml file. The following is a simple feature file that will package the custom-command bundle:
+	**<?xml version="1.0" encoding="UTF-8"?>**
+	**<features>**
+		**<feature name="my-kar" version="1.0">**
+			**<bundle>**
+				**mvn:com.your.organization/custom-command/1.0.0-SNAPSHOT**
+			**</bundle>**
+		**</feature>**
+	**</features>**
+
+* Copy that KAR file into the [karaf]/deploy directory, then list features on the command console.
+karaf@root> **feature:info my-kar**
+
+**Deploying Production-grade Apache Karaf:**
+
+**Offline repositories**
+* Core to Apache Karaf's ability to provision bundles, features, configuration, configuration files, and other artifacts is Apache Maven. By default, Maven will seek out resources available locally in your local m2 repository or in Karaf's built-in system folder (the system folder has the highest priority by default).
+* By default, Maven will seek out resources available locally in your local m2 repository or in Karaf's built-in system folder (the system folder has the highest priority by default).
+* If it fails to find a resource, it will venture onto the internet to obtain the artifact through a number of public repositories, as defined in **etc/org.ops4j.pax.url.mvn.cfg** file.
+
+**How to build an offline repository:**
